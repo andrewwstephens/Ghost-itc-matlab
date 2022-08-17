@@ -1,6 +1,6 @@
 %   Blaze function for the individual echelle orders. Uses approximations which
 %   assume orders m are all high. Based on Schroeder 'Astronomical Optics' p335;
-%   Columns are (1) wavelength in nm (2) Transmission.  
+%   Columns are (1) wavelength in nm (2) Orders.  
 
 362.2	95
 366.1	94
