@@ -1,4 +1,3 @@
-#!/usr/bin/env octave
 SNmain(
    lambda=363:1:1000, % = numpy.arange(363, 1000, 1)
    AB=18,          % AB magnitude of target
