@@ -28,9 +28,14 @@ function [SN, vars]=SNmain(lambda,AB,t_exp,ZD,resoln,seeing,SB,N_mirror,SR_sky,b
 %
 %   Presets
 %
-    area_tel = 491000.0;  % Gemini primary mirror area, cm^2
-    RON_red = 2.2;  % red CCD read noise e- rms (NRC rep Jun 2019; slow readout; av of 4)
-    RON_blue = 2.25; % blue CCD read noise e- rms (NRC rep Jun 2019; slow readout; av of 4)
+    #area_tel = 491000.0;  % Gemini primary mirror area, cm^2
+    area_tel = 476893.76;   # math.pi * 395**2 - math.pi * 65**2
+    
+    #RON_red = 2.2;  % red CCD read noise e- rms (NRC rep Jun 2019; slow readout; av of 4)
+    #RON_blue = 2.25; % blue CCD read noise e- rms (NRC rep Jun 2019; slow readout; av of 4)
+    RON_red = 4.5;  % red CCD read noise e- rms (to match Gemini ITC "Bright Target")
+    RON_blue = 4.5; % blue CCD read noise e- rms (to match Gemini ITC "Bright Target")
+    
     dark_red = 0.825; % red dark noise, e- /pix /hr (NRC rep Jun 2019; av of 4)
     dark_blue = 1.175; % blue dark noise, e- /pix /hr (NRC rep Jun 2019; av of 4)   
     area_SR = 0.939; % SR IFU area, arcsec^2
@@ -71,19 +76,15 @@ function [SN, vars]=SNmain(lambda,AB,t_exp,ZD,resoln,seeing,SB,N_mirror,SR_sky,b
     rate0 = f_lambda.*lambda*1E-9/(6.6256E-27*2.99792E8);
                % photon rate incident on top of atmosphere, phot /cm^2 /Å /s
     rate1 = rate0*area_tel;  %     phot /Å /s  for whole telescope area
-%    
     extinc_frac = Extinc_Paranal(lambda,ZD,0);  % Paranal extinction; fraction passed
     rate2 = rate1.*extinc_frac; % after atmos extinction; phot /Å /s
-%    
     rate3 = rate2.*GS_reflectivity(lambda,N_mirror,0); % after telescope mirrors; phot /Å /s  
-    rate4 = rate3*IFU_trans(resoln,seeing); % drop by IFU injection loss
-    rate5 = rate4.*GHOST_cable_eta(lambda); % drop by Cass Unit and cable throughputs 
+    rate4 = rate3.*IFU_trans(resoln,seeing); % drop by IFU injection loss
+    rate5 = rate4.*GHOST_cable_eta(lambda);  % drop by Cass Unit and cable throughputs 
     rate6 = rate5.*sgr_throughput(lambda,0); % drop by sgr and detector throughputs    
-    rate7 = rate6.*BlazeFunction(lambda);    % drop by individual order blaze functions
-%    
-    RD = nmperpix(lambda)*10;  % Reciprocal dispersion, Å/pix
+    rate7 = rate6.*BlazeFunction(lambda,0);    % drop by individual order blaze functions
+    RD = nmperpix(lambda,0)*10;  % Reciprocal dispersion, Å/pix
     rate8 = rate7.*RD*0.99;   % rate in phot /s /pixel; drop by 1% loss on slitview beamsplitter
-%    
     object = rate8*t_exp;    % phot /pix over whole exposure time; summed over slit length
 %
 %   Assemble noise variances
@@ -93,7 +94,7 @@ function [SN, vars]=SNmain(lambda,AB,t_exp,ZD,resoln,seeing,SB,N_mirror,SR_sky,b
     sky_rate2 = sky_rate1.*GS_reflectivity(lambda,N_mirror,0);   % losses through the system
     sky_rate2a = sky_rate2.*extinc_frac; % Hanuschik sky brightness is for outside atmosphere(!)
     sky_rate3 = sky_rate2a.*GHOST_cable_eta(lambda).*sgr_throughput(lambda,0);
-    sky_rate4 = sky_rate3.*BlazeFunction(lambda);  
+    sky_rate4 = sky_rate3.*BlazeFunction(lambda,0);  
     sky_rate5 = sky_rate4*area_IFU; % phot /Å after injection into IFU
     sky_rate6 = sky_rate5.*RD; % phot /pix over whole exposure time; summed over slit length
     sky_rate7 = sky_rate6*sky_coeff*0.99; % scale up to allow for sky subtraction noise; 1% BS loss
@@ -105,29 +106,42 @@ function [SN, vars]=SNmain(lambda,AB,t_exp,ZD,resoln,seeing,SB,N_mirror,SR_sky,b
     ron_rms = (lambda < lambda_cross)*RON_blue + (lambda >= lambda_cross)*RON_red;
     ron_var = slit_len*N_sub*(ron_rms.^2)/bin_spat; % read noise variance for 1 spectral pixel,
                                                     % all spatial pixels, all subexposures
-%
+
+# Q: Should there be a gain value in here to convert from object photons to electrons?
+
     var_total = object + sky_rate7 + dark2 + ron_var; % for 1 spectral pixel
-    vars = [object; sky_rate7; dark2; ron_var];
-%
-    SN_pix = object./sqrt(var_total);  % S/N per pixel
-    SN = SN_pix.*sqrt(B2lookup(lambda,resoln,1)); % S/N for resolution element
+    % vars = [object; sky_rate7; dark2; ron_var];
+
+    SN_pix = object./sqrt(var_total);                % S/N per pixel
+    SN = SN_pix.*sqrt(B2lookup(lambda,resoln,1,0));  % S/N per resolution element
 %       
     if plotQ
+        clf
+        
         subplot(2,1,1)
-        plot(lambda,SN,'LineWidth',1.5)
-        ylabel('Signal/noise')
-        xlabel('Wavelength  /nm')
-        xlim([363 1000])
-        subplot(2,1,2)
-        plot(lambda,object,'red','LineWidth',1.5)
+        plot(lambda,object, 'color','red', 'LineWidth',1.5, 'DisplayName', 'Source')
         hold on
-        plot(lambda,sky_rate7,'blue','LineWidth',1.5)
-        plot(lambda,dark2,'black','LineWidth',1.5)
-        plot(lambda,ron_var,'green','LineWidth',1.5)
-        xlabel('Wavelength  /nm')
-        ylabel('Variances')
+        plot(lambda,sky_rate7, 'color', 'blue', 'LineWidth',1.5, 'DisplayName', 'Sky')
+        plot(lambda,dark2, 'color', 'black', 'LineWidth',1.5, 'DisplayName', 'Dark')
+        plot(lambda,ron_var, 'color', 'green', 'LineWidth',1.5, 'DisplayName', 'RN^2')
+        grid on
+        legend('Location','northwest')
+        xlabel('Wavelength (nm)')
+        ylabel('electrons (gain=1)')
         xlim([363 1000])
+        title('SNmain.m')
+
+        subplot(2,1,2)
+        plot(lambda, SN, 'LineWidth',1.5, 'DisplayName', 'S/N / res element')
+        hold on
+        plot(lambda, SN_pix, 'LineWidth',1.5, 'DisplayName', 'S/N / pixel')
+        grid on
+        legend('Location','northwest')
+        xlabel('Wavelength (nm)')
+        ylabel('Signal / Noise')
+        xlim([363 1000])
+        title(sprintf('AB=%.1f  texp=%.0f  seeing=%.1f  BG=%s  ZD=%d', AB, t_exp, seeing, SB, ZD))
+        saveas(1, '/tmp/SN.png', 'png');
     end
 return
 end
-

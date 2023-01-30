@@ -1,4 +1,4 @@
-function BF = BlazeFunction(lambda)
+function BF = BlazeFunction(lambda,plotQ)
 %
 %   Blaze function for the individual echelle orders. Uses approximations which
 %   assume orders m are all high. Based on Schroeder 'Astronomical Optics' p335;
@@ -46,6 +46,18 @@ function BF = BlazeFunction(lambda)
 % 
     nu = pi*m_use.*(lambda - lambda_B_use)./lambda_B_use;                          
     BF = (sin(nu)./(nu+5*eps)).^2 + (nu == 0);    % This puts 1 in answer when nu = 0
+    
+    if plotQ
+       clf
+       plot(lambda, BF, 'LineWidth', 1.5)
+       grid on
+       xlabel('Wavelength (nm)')
+       ylabel('Blaze Funcion')
+       title('BlazeFunction.m')
+       #xlim([363 1000])
+       saveas(1, '/tmp/blazefunction.png', 'png');
+    end
+
     return
 %
 end

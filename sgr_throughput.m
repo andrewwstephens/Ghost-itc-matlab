@@ -39,6 +39,7 @@ function frac_out = sgr_throughput(lambda_in,plotQ)
     spline_data=spline(in_data(:,1),in_data(:,2),xgrid);
 %
     if plotQ
+        clf
         plot(in_data(:,1),in_data(:,2),'kd','MarkerFaceColor','black','MarkerSize',2)
         hold on
     end
@@ -48,9 +49,12 @@ function frac_out = sgr_throughput(lambda_in,plotQ)
     frac_out = interp1((lam_min:lam_max),spline_data,lambda_in,'linear');
 %
     if plotQ
-        plot(lambda_in,frac_out,'green','LineWidth',2)
+        plot(lambda_in,frac_out, 'color','green', 'LineWidth',2)
+        grid on
+        xlabel('Wavelength (nm)')
+        ylabel('Spectrograph Throughput')
+        title('sgr\_throughput.m')
     end
 %    
     return   
 end
-

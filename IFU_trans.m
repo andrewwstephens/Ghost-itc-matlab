@@ -63,6 +63,8 @@ function fraction_tx = IFU_trans(Res,FWHM)
         otherwise
             error('Invalid resolution type')
     end
+    
+    fprintf('Fraction of source in the IFU = %0.3f\n', fraction_tx)
     return
 %        
 end

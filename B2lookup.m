@@ -1,4 +1,4 @@
-function B2 = B2lookup(lambda,resoln,flag)
+function B2 = B2lookup(lambda,resoln,flag, plotQ)
 %
 %   Function to provide values of sum(B^2) at any wavelength - i.e. the (square of)
 %   conversion factor from S/N per pixel to S/N per resolution element (for weak
@@ -150,8 +150,18 @@ function B2 = B2lookup(lambda,resoln,flag)
 %         plot(m_data_red,B2_nu_data,'kd','MarkerFaceColor','black','MarkerSize',3)
 % end test
     end
-%       
+
+    if plotQ
+       clf
+       plot(lambda, B2, 'LineWidth', 1.5)
+       grid on
+       xlabel('Wavelength (nm)')
+       ylabel('S/N per pixel to per res element conversion factor')
+       title('B2lookup.m')
+       #xlim([363 1000])
+       saveas(1, '/tmp/b2lookup.png', 'png');
+    end
+
     return
 %
 end
-

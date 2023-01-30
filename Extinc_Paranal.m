@@ -54,22 +54,28 @@ function frac_out = Extinc_Paranal(lambda_in,ZD,plotQ)
     spline_data=spline(lambda_mf,k_lam,xgrid_mf);
 %
     if plotQ
+        clf
         plot(xgrid,spline_data)
         hold on
-        plot(lambda,k_lam,'kd','MarkerFaceColor','black','MarkerSize',3)
+        plot(lambda,k_lam,'kd','MarkerFaceColor','black','MarkerSize',3, 'DisplayName','model')
     end
 %
 %   Now use linear interpolation to find values at the desired lambda points
 %
     extinc = interp1((lam_min:lam_max),spline_data,lambda_in,'linear');
-%  
-    if plotQ
-        plot(lambda_in,extinc,'green','LineWidth',2)
-    end
 %
     airmass = 1/cosd(ZD);
     frac_out = 10.^(-0.4*airmass*extinc); 
 %
+    if plotQ
+        plot(lambda_in, extinc, 'color', 'red', 'LineWidth', 2, 'MarkerSize', 30, 'DisplayName','interp')
+        plot(lambda_in, frac_out, 'color', 'green', 'LineWidth', 2, 'DisplayName', 'Throughput')
+        grid on
+        xlabel('Wavelength (nm)')
+        ylabel('Extinction')
+        legend('Location','northwest')
+        title('Extinc\_Paranal.m')
+        end
+
     return
 end
-

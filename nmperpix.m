@@ -1,4 +1,4 @@
-function RD = nmperpix(lambda)
+function RD = nmperpix(lambda,plotQ)
 %
 %   Function to provide values of wavelength interval (nm) per pixel at any
 %   wavelength. Since this varies along each order (due to the anamorphic factor), it
@@ -109,8 +109,18 @@ function RD = nmperpix(lambda)
 %         plot(m_use(i),polyval(poly_B2_nu,m_use(i)),'gd','MarkerFaceColor','green','MarkerSize',4)
 % end test
     end
-%       
+
+    if plotQ
+        clf
+        plot(lambda, RD, 'LineWidth', 1.5)
+        grid on
+        xlabel('Wavelength (nm)')
+        ylabel('Reciprocal dispersion (nm/pixel)')
+        title('nmperpix.m')
+        #xlim([363 1000])
+        saveas(1, '/tmp/nmperpix.png', 'png');
+    end
+
     return
 %
 end
-
